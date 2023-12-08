@@ -1,4 +1,3 @@
-
 function checkLoginStatus() {
     fetch('/api/check_login_status', {
         method: 'GET',
@@ -98,7 +97,7 @@ function validateJoin() {
     return isValid
 }
 
-// 아이디 동일성 체크
+// 아이디 동일성 검사
 function checkDuplicateId() {
     
     let userId = document.getElementById('userId').value
@@ -121,4 +120,37 @@ function checkDuplicateId() {
     .catch(error => {
         console.log('Error', error)
     })
+}
+
+// 음식점 등록 유효성 검사
+function validateRegist() {
+    let shopname = document.getElementById('shopname')
+    let address = document.getElementById('address')
+    let style = document.getElementById('style')
+    let review = document.getElementById('review')
+    let isValid = true
+
+    if (shopname.value == "") {
+        alert("가게이름을 작성해주세요.")
+        shopname.focus()
+        return false
+    }
+
+    if (address.value == "") {
+        alert("주소를 입력해주세요.")
+        address.focus()
+        return false
+    }
+
+    if (style.value == "") {
+        alert("종류를 입력해주세요.")
+        return false
+    }
+
+    if (review.value == "") {
+        alert("설명 및 평가를 입력해주세요.")
+        return false
+    }
+
+    return isValid
 }

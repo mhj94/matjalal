@@ -10,7 +10,7 @@
     <title>Foodeiblog | Template</title>
 
     <!-- Google Font -->
-    <link href="https://fㅇonts.googleapis.com/css?family=Nunito+Sans:300,400,600,700,800,900&display=swap"
+    <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:300,400,600,700,800,900&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Unna:400,700&display=swap" rel="stylesheet">
 
@@ -71,13 +71,8 @@
                                     <input type="text" placeholder="ID*" name="id" id="userId" onblur="checkDuplicateId()">
                                     <input type="password" placeholder="Password" name="password" id="userPassword">
                                     <input type="password" placeholder="Confirm Password" name="password_confirmation" id="confirmPassword">
-                                    <label for="sign-agree-check">
-                                        I agree to the terms & conditions
-                                        <input type="checkbox" id="sign-agree-check">
-                                        <span class="checkmark"></span>
-                                    </label>
                                     <button type="submit" class="site-btn">Sign Up</button>
-                                    <button type="button" class="site-btn"><a href="main.html"
+                                    <button class="site-btn" type="button"><a href="{{url_for('index')}}"
                                             style="display: inline-block; color: #fff;">Back</a></button>
                                 </form>
                             </div>
@@ -92,7 +87,7 @@
                                     <input type="password" placeholder="Password" name="password" id="password">
                                     <div id="passwordMismatch" style="color: red; display: none;">아이디 또는 비밀번호가 올바르지 않습니다.</div>    
                                     <button type="submit" class="site-btn">Sign In</button>
-                                    <button type="button" class="site-btn"><a href="main.html"
+                                    <button class="site-btn" type="button"><a href="{{url_for('index')}}"
                                             style="display: inline-block; color: #fff;">Back</a></button>
                                 </form>
                             </div>

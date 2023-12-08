@@ -8,7 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import timedelta
 from sqlalchemy.exc import SQLAlchemyError
-
+from datetime import datetime
 
 import os
 
@@ -21,20 +21,20 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
 
 db = SQLAlchemy(app)
 
+
 class Users(db.Model):
     userid = db.Column(db.String(100), primary_key=True)
     username = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(20), nullable=False)
 
-
-class Restaurants(db.Model):
+class Restarants(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     userid = db.Column(db.String(20), nullable=False)
     username = db.Column(db.String(20), nullable=False)
     shopname = db.Column(db.String(50), nullable=False)
     address = db.Column(db.String(200), nullable=False)
     style = db.Column(db.String(20), nullable=False)
-    review = db.Column(db.String(500), nullable=False)
+    review = db.Column(db.Text, nullable=False)
     img = db.Column(db.String(1000), nullable=False)
 
 
@@ -52,65 +52,83 @@ def add_no_cache_header(response):
 
 @app.route('/search', methods=['GET'])  # 검색
 def search():
+    if 'user_id' in session:      
+        username = None
+        if 'user_id' in session:
+            user = Users.query.get(session['user_id'])
+            if user:
+                username = user.username
+
     query = request.args.get('query')
-    restaurant_list = Restaurants.query.filter(Restaurants.shopname.like(f'%{query}%') |
-                                               Restaurants.style.like(f'%{query}%')).all()
+    restarant_list = Restarants.query.filter(Restarants.shopname.like(f'%{query}%') |
+                                                Restarants.style.like(f'%{query}%')).all()
 
-    return render_template('main.html', restaurant_list=restaurant_list)
+    return render_template('main.html', restarant_list = restarant_list, user_name = username)
 
-# 식당 추가 페이지 이동
-
-
-@app.route('/restaurant.html', methods=['POST', 'GET'])
+@app.route('/restarant.html', methods=['POST', 'GET']) # 식당 추가 페이지 이동
 def foodie_move():
-    user_name = session.get('user_name')
-    return render_template('restaurant-1.html', user_name=user_name)
+    if 'user_id' in session:      
+        username = None
+        if 'user_id' in session:
+            user = Users.query.get(session['user_id'])
+            if user:
+                username = user.username
+        return render_template('restarant-1.html', user_name = username)
+
+    alert_msg = "로그인이 필요합니다."
+
+    return render_template('sign.html', msg = alert_msg)
+            
+#파일명을 겹치지 않기 위한 함수
+def generate_unique_filename(filename):
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')
+    _, extension = os.path.splitext(filename)
+    unique_filename = timestamp + extension
+    return unique_filename
 
 # 식당 추가
 
 
 @app.route('/api/foodie', methods=['POST'])
 def foodie_create():
-    try:
-        userid_receive = request.form['userid']
-        username_receive = request.form['username']
+
+    try: 
+        userid_receive = session['user_id']
+        username_receive = session['user_name']
         shopname_receive = request.form['shopname']
         address_receive = request.form['address']
         style_receive = request.form['style']
         review_receive = request.form['review']
         uploaded_file = request.files['img']
-        img_name = uploaded_file.filename
-        uploaded_file.save("./static/upload/"+img_name+".jpeg")
+        filename = uploaded_file.filename
+        unique_filename = generate_unique_filename(filename)
+        uploaded_file.save("./static/upload/"+unique_filename+".jpeg")
     except SQLAlchemyError as e:
         flash("오류가 발생했습니다.")
 
-    restaurant = Restaurants(userid=userid_receive, username=username_receive, shopname=shopname_receive,
-                             address=address_receive, style=style_receive, review=review_receive, img=img_name)
-    db.session.add(restaurant)
+
+    restarant = Restarants(userid = userid_receive, username = username_receive, shopname = shopname_receive, 
+                            address =  address_receive, style  = style_receive, review = review_receive, img = unique_filename)
+    db.session.add(restarant)
     db.session.commit()
 
     return redirect(url_for('index'))
-    # return redirect(url_for('index.html'))
 
 
 @app.route('/api/foodie/', methods=['POST'])
-# @app.route('/api/foodie/<id>', methods=['post']) 삭제
 def foodie_delete():
-    # userid = session['userid']
-    id = 1
-    userid = 'test'
-
+    id_receive = request.form['id']
+    user_id = session['user_id']
     try:
-        delete_restaurant = Restaurants.query.filter_by(
-            userid=userid, id=id).first()
-        db.session.delete(delete_restaurant)
+        delete_restarant = Restarants.query.filter_by(userid = user_id, id = id_receive).first() 
+        db.session.delete(delete_restarant)
         db.session.commit()
         flash("삭제되었습니다 .")
 
     except SQLAlchemyError as e:
         flash("권한이 없습니다.")
 
-    return render_template('restaurant.html')
+    return redirect(url_for('index'))
 
 # 회원가입/로그인 페이지
 @app.route('/sign.html', methods=['GET', 'POST'])
@@ -130,10 +148,10 @@ def index():
         user = Users.query.get(session['user_id'])
         if user:
             username = user.username
+            
+    restarant_list = Restarants.query.all()
 
-    restaurant_list = Restaurants.query.all()
-
-    return render_template('main.html', user_name=username, restaurant_list=restaurant_list)
+    return render_template('main.html', user_name = username, restarant_list = restarant_list)
 
 # 로그인
 @app.route('/api/login', methods=['POST'])
@@ -203,7 +221,7 @@ def member():
         hashed_password = generate_password_hash(
             password, method='pbkdf2:sha256')
         new_user = Users(userid=id, username=username,
-                         password=hashed_password)
+                        password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
 
@@ -211,6 +229,7 @@ def member():
         return redirect(url_for('index'))
 
     return render_template('index')
+
 
 # 회원가입 아이디 유효성 검사
 @app.route('/api/check_duplicate', methods=['POST'])
@@ -236,9 +255,22 @@ def check_password():
         return jsonify({'isValid': True})
     else:
         return jsonify({'isValid': False}) 
-       
-if __name__ == '__main__':
-    app.run(debug=True)
+
+
+# 상세페이지 이동
+@app.route('/restarant/<int:restarant_id>', methods=['GET'])
+def restarant_detail(restarant_id):
+    # restarant_id에 해당하는 레스토랑 정보를 데이터베이스에서 가져와서 상세 페이지에 전달
+    restarant = Restarants.query.get_or_404(restarant_id)
+    username = None
+    userid = None
+    if 'user_id' in session:      
+        if 'user_id' in session:
+            user = Users.query.get(session['user_id'])
+            if user:
+                userid = user.userid
+                username = user.username
+    return render_template('restarant_detail.html', restarant=restarant, user_name = username, user_id = userid)
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(debug=True)
