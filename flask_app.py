@@ -102,7 +102,11 @@ def foodie_create():
         uploaded_file = request.files['img']
         filename = uploaded_file.filename
         unique_filename = generate_unique_filename(filename)
-        uploaded_file.save("./static/upload/"+unique_filename+".jpeg")
+        # local 환경시 파일경로
+        uploaded_file.save("./static/upload/"+unique_filename+".jpeg") 
+        # 서버 환경시 파일경로 (----- 추가하기)
+        # uploaded_file.save("------/static/upload/"+unique_filename+".jpeg")
+
     except SQLAlchemyError as e:
         flash("오류가 발생했습니다.")
 
