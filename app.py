@@ -101,18 +101,14 @@ def foodie_create():
     db.session.commit()
 
     return redirect(url_for('index'))
-    # return redirect(url_for('index.html'))
 
 
 @app.route('/api/foodie/', methods=['POST'])
-# @app.route('/api/foodie/<id>', methods=['post']) 삭제
 def foodie_delete():
-    # userid = session['userid']
-    id = 1
-    userid = 'test'
-
+    id_receive = request.form['id']
+    user_id = session['user_id']
     try:
-        delete_restarant = Restarants.query.filter_by(userid = userid, id = id).first() 
+        delete_restarant = Restarants.query.filter_by(userid = user_id, id = id_receive).first() 
         db.session.delete(delete_restarant)
         db.session.commit()
         flash("삭제되었습니다 .")
@@ -120,7 +116,7 @@ def foodie_delete():
     except SQLAlchemyError as e:
         flash("권한이 없습니다.")
 
-    return render_template('restarant.html')
+    return redirect(url_for('index'))
 
 # 회원가입/로그인 페이지
 @app.route('/sign.html', methods=['GET', 'POST'])
@@ -213,7 +209,7 @@ def member():
         hashed_password = generate_password_hash(
             password, method='pbkdf2:sha256')
         new_user = Users(userid=id, username=username,
-                         password=hashed_password)
+                        password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
 
@@ -247,14 +243,22 @@ def check_password():
         return jsonify({'isValid': True})
     else:
         return jsonify({'isValid': False}) 
-       
+
 
 # 상세페이지 이동
 @app.route('/restarant/<int:restarant_id>', methods=['GET'])
 def restarant_detail(restarant_id):
     # restarant_id에 해당하는 레스토랑 정보를 데이터베이스에서 가져와서 상세 페이지에 전달
     restarant = Restarants.query.get_or_404(restarant_id)
-    return render_template('restarant_detail.html', restarant=restarant)
+    username = None
+    userid = None
+    if 'user_id' in session:      
+        if 'user_id' in session:
+            user = Users.query.get(session['user_id'])
+            if user:
+                userid = user.userid
+                username = user.username
+    return render_template('restarant_detail.html', restarant=restarant, user_name = username, user_id = userid)
 
 if __name__ == '__main__':
     app.run(debug=True)
