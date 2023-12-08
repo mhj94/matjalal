@@ -110,14 +110,12 @@ def foodie_create():
     except SQLAlchemyError as e:
         flash("오류가 발생했습니다.")
 
-
     restarant = Restarants(userid = userid_receive, username = username_receive, shopname = shopname_receive, 
                             address =  address_receive, style  = style_receive, review = review_receive, img = unique_filename)
     db.session.add(restarant)
     db.session.commit()
 
     return redirect(url_for('index'))
-
 
 @app.route('/api/foodie/', methods=['POST'])
 def foodie_delete():
